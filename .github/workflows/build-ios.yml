@@ -1,1 +1,43 @@
 
+name: Build and Deploy Master Branch
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install Cordova and dependencies
+        run: |
+          npm install -g cordova
+          npm install
+
+      - name: Build iOS app
+        run: |
+          cordova platform add ios
+          cordova build ios --release --device
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ios-build
+          path: platforms/ios/build/device/*.ipa  # Adjust path based on your project structure
+
+      - name: Deploy to GitHub Pages
+        if: success()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./www  # Adjust path to your Cordova www directory
